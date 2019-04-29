@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Destruction
+namespace Sebastian.Geometry
 {
     using ClipperLib;
     using Path = List<ClipperLib.IntPoint>;
@@ -109,8 +109,8 @@ namespace Destruction
               Paths subj = new Paths(1);
               subj.Add(new Path(4));
               subj[0].Add(new IntPoint(0,0));
-              subj[0].Add(new IntPoint(-1000,0));
-              subj[0].Add(new IntPoint(-1000,200));
+              subj[0].Add(new IntPoint(-500,0));
+              subj[0].Add(new IntPoint(-500,200));
               subj[0].Add(new IntPoint(0,200));
 
            
@@ -128,29 +128,7 @@ namespace Destruction
               c.Execute(ClipType.ctDifference, solutions);
 
 
-            // solution =  Mesh2Path(Mymesh);
-            //     foreach (var pth in solution)
-            //     {
-            //
-            //         Debug.Log("Path X:" +pth.X + " Y:" + pth.Y);
-            //     }
-
-            // c.Execute(ClipType.ctIntersection, solution,
-            //   PolyFillType.pftEvenOdd, PolyFillType.pftEvenOdd);
-
-
-            //  List<Vector2> points = new List<Vector2>();
-            //  for (int index = solution.Count - 1; index >= 0; index--) // Reverse enumeration (to flip normals)
-            //  {
-            //      IntPoint eachPoint = solution[index];
-            //      points.Add(new Vector2(eachPoint.X / scale, eachPoint.Y / scale));
-            //  }
-            //  return Polygon.PolygonWithPointList(points);
-
-            // Use the triangulator to get indices for creating triangles
-
-
-
+          
 
             int t = 0;
             foreach (var item in solutions)
@@ -160,47 +138,53 @@ namespace Destruction
             Vector2[] vertices2D = new Vector2[t];
 
 
+
+
+
             
 
             int a = 0;
             int z = 0;
-            List<int []> partindices = new List<int []>();
-            foreach (var solution in solutions)
-            {
-                Vector2[] part = new Vector2[solution.Capacity];
-                int l = 0;
 
+            foreach (var solution in solutions)
+                 {
+                  
                 foreach (var pth in solution)
                 {
                     vertices2D[a] = new Vector2(pth.X, pth.Y);
-                    part[l] = new Vector2(pth.X, pth.Y);
-                    Debug.Log("Path X:" + pth.X + " Y:" + pth.Y + "a:" +a + "z:" +z);
-                    l++;
+                    Debug.Log("Path X:" + pth.X + " Y:" + pth.Y + "a:" + a + "z:" + z);
                     a++;
                 }
-
-                Triangulator tr = new Triangulator(part);
-                partindices.Add(tr.Triangulate());
-
                 z++;
             }
-            List<int> indices = new List<int>();
 
-            int p = 0;
-            int k = 0;
-            foreach (var part in partindices)
-            {
-                foreach (var item in part)
-                {
 
-                    // how much vert fist parth has ?
-                    indices.Add(item+(k*solutions[k].Capacity));
-                    
-                    Debug.Log("indices:" + (item + (k * solutions[k].Capacity)) + " p:"+p +" k:"+k);
-                   p++;
-                }
-                k++;
-            }
+
+
+
+                Polygon polygon = new Polygon(vertices2D);
+
+            Triangulator tr = new Triangulator(polygon);
+            
+
+
+
+
+           // int p = 0;
+           // int k = 0;
+           // foreach (var part in partindices)
+           // {
+           //     foreach (var item in part)
+           //     {
+           //
+           //         // how much vert fist parth has ?
+           //         indices.Add(item+(k*solutions[k].Capacity));
+           //         
+           //         Debug.Log("indices:" + (item + (k * solutions[k].Capacity)) + " p:"+p +" k:"+k);
+           //        p++;
+           //     }
+           //     k++;
+           // }
             
 
 
@@ -217,38 +201,12 @@ namespace Destruction
 
 
 
-
-            //  foreach (var vert in Mymesh.vertices)
-            //  {
-            //      
-            //        Debug.Log("Vert X:" + vert.x + " Y:" + vert.y);
-            //  }
-
-
-            //  int[] Mytriangles = { 0,2,1,
-            //                        0,3,2,
-            //                        0,4,3,
-            //                        0,5,4
-            //  };
-            //    i++;
-            //  
-            //    if (i >= 990)
-            //        i = 51;
-            //  
-
-
-           
-
-            Mymesh.triangles = indices.ToArray();
-
-
-
-
-         //   Mymesh.RecalculateBounds();
+            Mymesh.triangles = tr.Triangulate();
+            Mymesh.RecalculateBounds();
             Mymesh.RecalculateNormals();
             GetComponent<MeshFilter>().mesh = Mymesh;
 
-            
+   
 
 
         }
