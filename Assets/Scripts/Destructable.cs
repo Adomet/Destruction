@@ -11,7 +11,7 @@ namespace Sebastian.Geometry
 
     public class Destructable : MonoBehaviour
     {
-
+        //Adomet
 
 
         public float Len = 1f;
