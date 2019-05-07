@@ -1,53 +1,80 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace Sebastian.Geometry
+namespace Destructable
 {
-	/*
-     * Handles triangulation of given polygon using the 'ear-clipping' algorithm.
-     * The implementation is based on the following paper:
-     * https://www.geometrictools.com/Documentation/TriangulationByEarClipping.pdf
-     */
 
-	public class Triangulator
+    public class EarTriangulator 
     {
-        LinkedList<Vertex> vertsInClippedPolygon;
+        //    EarClippingTriangualtion algorithm
+        //
+        //    Input: A simple polygon P with n vertices V(v0, v1,…, vn-1)
+        //    Output: A triangulation T with n–2 triangles
+        //    1:  Compute interior angles of each vertex in P.
+        //    2:  Indentify each vertex whether it is an ear tip or not. 
+        //    3:  while number of triangles in T<n–2 do 
+        //    4:  Find the ear tip vi which has the smallest interior angle.
+        //    5:  Construct a triangle △(vi－1, vi, vi+1) and add it onto T. 
+        //    6:  Let vi be no longer an ear tip. 
+        //    7:  Update connection relationship of vi－1 and vi, vi and vi+1, vi－1 and vi+1.
+        //    8:  Compute the interior angles of vi－1 and vi+1.
+        //    9:  Refresh the ear tip status of vi－1 and vi+1.
+        //    10: end while
+        //
+
+
+        LinkedList<Vertex> VertsOfShape = new LinkedList<Vertex>();
         int[] tris;
         int triIndex;
 
-        public Triangulator(Polygon polygon)
+        public EarTriangulator(Polygon polygon)
         {
             int numHoleToHullConnectionVerts = 2 * polygon.numHoles; // 2 verts are added when connecting a hole to the hull.
             int totalNumVerts = polygon.numPoints + numHoleToHullConnectionVerts;
             tris = new int[(totalNumVerts - 2) * 3];
-            vertsInClippedPolygon = GenerateVertexList(polygon);
+            VertsOfShape = GenerateVertexList(polygon);
         }
+
+        bool IsConvex(Vector2 v0, Vector2 v1, Vector2 v2)
+        {
+            // sing of the dot product gives a angle is convex or not a · b = ax × bx + ay × by) 1 or -1
+            return SideOfLine(v0, v2, v1) == -1;
+        }
+
+        public static int SideOfLine(Vector2 a, Vector2 b, Vector2 c)
+        {
+            // sing of the dot product gives a angle is convex or not a · b = ax × bx + ay × by) 1 or -1
+            return (int)Mathf.Sign((c.x - a.x) * (-b.y + a.y) + (c.y - a.y) * (b.x - a.x));
+        }
+
 
         public int[] Triangulate()
         {
-            while (vertsInClippedPolygon.Count >= 3)
+
+            while (VertsOfShape.Count >= 3)
             {
                 bool hasRemovedEarThisIteration = false;
-                LinkedListNode<Vertex> vertexNode = vertsInClippedPolygon.First;
-                for (int i = 0; i < vertsInClippedPolygon.Count; i++)
-                {
-                    LinkedListNode<Vertex> prevVertexNode = vertexNode.Previous ?? vertsInClippedPolygon.Last;
-                    LinkedListNode<Vertex> nextVertexNode = vertexNode.Next ?? vertsInClippedPolygon.First;
+                LinkedListNode<Vertex> vertexNode = VertsOfShape.First;
 
+                for (int i = 0; i < VertsOfShape.Count; i++)
+                {
+                    LinkedListNode<Vertex> prevVertexNode = vertexNode.Previous ?? VertsOfShape.Last;
+                    LinkedListNode<Vertex> nextVertexNode = vertexNode.Next ?? VertsOfShape.First;
                     if (vertexNode.Value.isConvex)
                     {
                         if (!TriangleContainsVertex(prevVertexNode.Value, vertexNode.Value, nextVertexNode.Value))
                         {
+
                             // check if removal of ear makes prev/next vertex convex (if was previously reflex)
                             if (!prevVertexNode.Value.isConvex)
                             {
-                                LinkedListNode<Vertex> prevOfPrev = prevVertexNode.Previous ?? vertsInClippedPolygon.Last;
+                                LinkedListNode<Vertex> prevOfPrev = prevVertexNode.Previous ?? VertsOfShape.Last;
 
                                 prevVertexNode.Value.isConvex = IsConvex(prevOfPrev.Value.position, prevVertexNode.Value.position, nextVertexNode.Value.position);
                             }
                             if (!nextVertexNode.Value.isConvex)
                             {
-                                LinkedListNode<Vertex> nextOfNext = nextVertexNode.Next ?? vertsInClippedPolygon.First;
+                                LinkedListNode<Vertex> nextOfNext = nextVertexNode.Next ?? VertsOfShape.First;
                                 nextVertexNode.Value.isConvex = IsConvex(prevVertexNode.Value.position, nextVertexNode.Value.position, nextOfNext.Value.position);
                             }
 
@@ -58,11 +85,11 @@ namespace Sebastian.Geometry
                             triIndex++;
 
                             hasRemovedEarThisIteration = true;
-                            vertsInClippedPolygon.Remove(vertexNode);
+                            VertsOfShape.Remove(vertexNode);
                             break;
                         }
-                    }
 
+                    }
 
                     vertexNode = nextVertexNode;
                 }
@@ -78,7 +105,6 @@ namespace Sebastian.Geometry
 
 
 
-        // Creates a linked list of all vertices in the polygon, with the hole vertices joined to the hull at optimal points.
         LinkedList<Vertex> GenerateVertexList(Polygon polygon)
         {
             LinkedList<Vertex> vertexList = new LinkedList<Vertex>();
@@ -158,10 +184,10 @@ namespace Sebastian.Geometry
                                 // duplicate edges occur where a hole has been joined to the outer polygon
                                 bool isDuplicateEdge = Mathf.Approximately(rayIntersectX, rayIntersectPoint.x);
 
-								// connect to duplicate edge (the one that leads away from the other, already connected hole, and back to the original hull) if the
-								// current hole's bridge point is higher up than the bridge point of the other hole (so that the new bridge connection doesn't intersect).
-								bool connectToThisDuplicateEdge = holeData.bridgePoint.y > potentialNewBridgeNode.Previous.Value.position.y;
-  
+                                // connect to duplicate edge (the one that leads away from the other, already connected hole, and back to the original hull) if the
+                                // current hole's bridge point is higher up than the bridge point of the other hole (so that the new bridge connection doesn't intersect).
+                                bool connectToThisDuplicateEdge = holeData.bridgePoint.y > potentialNewBridgeNode.Previous.Value.position.y;
+
                                 if (!isDuplicateEdge || connectToThisDuplicateEdge)
                                 {
                                     // if this is the closest ray intersection thus far, set bridge hull node to point in line having greater x pos (since def to right of hole).
@@ -198,7 +224,7 @@ namespace Sebastian.Geometry
                         continue;
                     }
                     // if there is a point inside triangle, this invalidates the current bridge node on hull.
-                    if (Maths2D.PointInTriangle(holeData.bridgePoint, rayIntersectPoint, initialBridgeNodeOnHull.Value.position, nodePotentiallyInTriangle.Value.position))
+                    if (PointInTriangle(holeData.bridgePoint, rayIntersectPoint, initialBridgeNodeOnHull.Value.position, nodePotentiallyInTriangle.Value.position))
                     {
                         // Duplicate points occur at hole and hull bridge points.
                         bool isDuplicatePoint = validBridgeNodeOnHull.Value.position == nodePotentiallyInTriangle.Value.position;
@@ -249,18 +275,23 @@ namespace Sebastian.Geometry
         }
 
 
-        // check if triangle contains any verts (note, only necessary to check reflex verts).
+
+
+
+
+
+
         bool TriangleContainsVertex(Vertex v0, Vertex v1, Vertex v2)
         {
-            LinkedListNode<Vertex> vertexNode = vertsInClippedPolygon.First;
-            for (int i = 0; i < vertsInClippedPolygon.Count; i++)
+            LinkedListNode<Vertex> vertexNode = VertsOfShape.First;
+            for (int i = 0; i < VertsOfShape.Count; i++)
             {
                 if (!vertexNode.Value.isConvex) // convex verts will never be inside triangle
                 {
                     Vertex vertexToCheck = vertexNode.Value;
                     if (vertexToCheck.index != v0.index && vertexToCheck.index != v1.index && vertexToCheck.index != v2.index) // dont check verts that make up triangle
                     {
-                        if (Maths2D.PointInTriangle(v0.position, v1.position, v2.position, vertexToCheck.position))
+                        if (PointInTriangle(v0.position, v1.position, v2.position, vertexToCheck.position))
                         {
                             return true;
                         }
@@ -273,24 +304,13 @@ namespace Sebastian.Geometry
         }
 
 
-        // v1 is considered a convex vertex if v0-v1-v2 are wound in a counter-clockwise order.
-        bool IsConvex(Vector2 v0, Vector2 v1, Vector2 v2)
+        bool PointInTriangle(Vector2 a, Vector2 b, Vector2 c, Vector2 p)
         {
-            return Maths2D.SideOfLine(v0, v2, v1) == -1;
-        }
+            float area = 0.5f * (-b.y * c.x + a.y * (-b.x + c.x) + a.x * (b.y - c.y) + b.x * c.y);
+            float s = 1 / (2 * area) * (a.y * c.x - a.x * c.y + (c.y - a.y) * p.x + (a.x - c.x) * p.y);
+            float t = 1 / (2 * area) * (a.x * b.y - a.y * b.x + (a.y - b.y) * p.x + (b.x - a.x) * p.y);
+            return s >= 0 && t >= 0 && (s + t) <= 1;
 
-        public struct HoleData
-        {
-            public readonly int holeIndex;
-            public readonly int bridgeIndex;
-            public readonly Vector2 bridgePoint;
-
-            public HoleData(int holeIndex, int bridgeIndex, Vector2 bridgePoint)
-            {
-                this.holeIndex = holeIndex;
-                this.bridgeIndex = bridgeIndex;
-                this.bridgePoint = bridgePoint;
-            }
         }
 
         public class Vertex
@@ -306,6 +326,115 @@ namespace Sebastian.Geometry
                 this.isConvex = isConvex;
             }
         }
-    }
 
+
+
+
+
+        public struct HoleData
+        {
+            public readonly int holeIndex;
+            public readonly int bridgeIndex;
+            public readonly Vector2 bridgePoint;
+
+            public HoleData(int holeIndex, int bridgeIndex, Vector2 bridgePoint)
+            {
+                this.holeIndex = holeIndex;
+                this.bridgeIndex = bridgeIndex;
+                this.bridgePoint = bridgePoint;
+            }
+        }
+
+  
+
+
+        public class Polygon
+        {
+
+            public readonly Vector2[] points;
+            public readonly int numPoints;
+
+            public readonly int numHullPoints;
+
+            public readonly int[] numPointsPerHole;
+            public readonly int numHoles;
+
+            readonly int[] holeStartIndices;
+
+            public Polygon(Vector2[] hull, Vector2[][] holes)
+            {
+                numHullPoints = hull.Length;
+                numHoles = holes.GetLength(0);
+
+                numPointsPerHole = new int[numHoles];
+                holeStartIndices = new int[numHoles];
+                int numHolePointsSum = 0;
+
+                for (int i = 0; i < holes.GetLength(0); i++)
+                {
+                    numPointsPerHole[i] = holes[i].Length;
+
+                    holeStartIndices[i] = numHullPoints + numHolePointsSum;
+                    numHolePointsSum += numPointsPerHole[i];
+                }
+
+                numPoints = numHullPoints + numHolePointsSum;
+                points = new Vector2[numPoints];
+
+
+                // add hull points, ensuring they wind in counterclockwise order
+                bool reverseHullPointsOrder = !PointsAreCounterClockwise(hull);
+                for (int i = 0; i < numHullPoints; i++)
+                {
+                    points[i] = hull[(reverseHullPointsOrder) ? numHullPoints - 1 - i : i];
+                }
+
+                // add hole points, ensuring they wind in clockwise order
+                for (int i = 0; i < numHoles; i++)
+                {
+                    bool reverseHolePointsOrder = PointsAreCounterClockwise(holes[i]);
+                    for (int j = 0; j < holes[i].Length; j++)
+                    {
+                        points[IndexOfPointInHole(j, i)] = holes[i][(reverseHolePointsOrder) ? holes[i].Length - j - 1 : j];
+                    }
+                }
+
+            }
+
+
+
+            public Polygon(Vector2[] hull) : this(hull, new Vector2[0][])
+            {
+            }
+
+            bool PointsAreCounterClockwise(Vector2[] testPoints)
+            {
+                float signedArea = 0;
+                for (int i = 0; i < testPoints.Length; i++)
+                {
+                    int nextIndex = (i + 1) % testPoints.Length;
+                    signedArea += (testPoints[nextIndex].x - testPoints[i].x) * (testPoints[nextIndex].y + testPoints[i].y);
+                }
+
+                return signedArea < 0;
+            }
+
+            public int IndexOfFirstPointInHole(int holeIndex)
+            {
+                return holeStartIndices[holeIndex];
+            }
+
+            public int IndexOfPointInHole(int index, int holeIndex)
+            {
+                return holeStartIndices[holeIndex] + index;
+            }
+
+            public Vector2 GetHolePoint(int index, int holeIndex)
+            {
+                return points[holeStartIndices[holeIndex] + index];
+            }
+
+        }
+
+    }
 }
