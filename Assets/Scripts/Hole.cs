@@ -94,53 +94,100 @@ namespace Destructable
         {
             Mesh Mymesh = GetComponent<MeshFilter>().mesh;
 
+            Vector3[] newverts = new Vector3[6*Mymesh.vertices.Length];
+
+            int vertCount = Mymesh.vertices.Length;
+
+            int[] indices = new int[2*Mymesh.triangles.Length + vertCount*6];
 
 
-            Vector3[] newverts = new Vector3[2*Mymesh.vertices.Length];
-            int[] indices = new int[2*Mymesh.triangles.Length+3];
+            Debug.Log("verts:"+ Mymesh.vertices.Length);
+            Debug.Log("triangles:"+Mymesh.triangles.Length);
 
+            // Make first face again
             int c = 0;
             foreach (var item in Mymesh.triangles)
             {
                 indices[c] = item;
                 c++;
             }
-           
 
 
-            int a = c/3;
+
+            // Construct second face of the mesh based on other face
             for (int i = 0; i < Mymesh.triangles.Length/3; i++)
             {
-                indices[c] = Mymesh.triangles[(i*3)]+a;
+                indices[c] = Mymesh.triangles[(i * 3)] + vertCount;
                 c++;
-                indices[c] = Mymesh.triangles[(i*3)+2]+a;
+                indices[c] = Mymesh.triangles[(i * 3) + 2] + vertCount;
                 c++;
-                indices[c] = Mymesh.triangles[(i*3)+1]+a;
+                indices[c] = Mymesh.triangles[(i * 3) + 1] + vertCount;
                 c++;
+            }
+
+            //Construct middle portion of the model
+            for (int i = 0; i < vertCount; i++)
+            {
+                //face 1 of the quad
+                indices[c] = Mymesh.triangles[(i)] + vertCount*2;
+                c++;
+                indices[c] = Mymesh.triangles[(i)] + vertCount * 3;
+                c++;
+                indices[c] = Mymesh.triangles[(i) + 1] + vertCount*2;
+                c++;
+                //face 2 of the quad
+                indices[c] = Mymesh.triangles[(i) + 1] + vertCount*2;
+                c++;
+                indices[c] = Mymesh.triangles[(i)] + vertCount * 3;
+                c++;
+                indices[c] = Mymesh.triangles[(i) + 1] + vertCount * 3;
+                c++;
+
+            
+            
             }
 
 
 
 
 
+     
+            // Add verts for existing faces
             int t = 0;
             foreach (var item in Mymesh.vertices)
             {
                 newverts[t] = item;
                 t++;
             }
+            // Add verts for new face
             foreach (var item in Mymesh.vertices)
             {
                 newverts[t] = new Vector3(item.x,item.y,item.z+extrudewidth);
                 t++;
             }
+           
+            //Add verts for middle faces
+           
+            foreach (var item in Mymesh.vertices)
+            {
+                newverts[t] = item;
+                t++;
+            }
+           
+            foreach (var item in Mymesh.vertices)
+            {
+                newverts[t] = new Vector3(item.x, item.y, item.z + extrudewidth);
+                t++;
+            }
 
 
-            
 
             Mymesh.vertices = newverts;
             Mymesh.triangles = indices;
 
+           
+            Mymesh.RecalculateBounds();
+            Mymesh.RecalculateTangents();
             Mymesh.RecalculateNormals();
             GetComponent<MeshFilter>().mesh = Mymesh;
 
@@ -184,23 +231,34 @@ namespace Destructable
 
             }
 
-            // Create the Vector3 vertices
-            Vector3[] vertices = new Vector3[hull.Length + holes[0].Length];
-            int i = 0;
-            foreach (var item in hull)
-            {
-                vertices[i] = new Vector3(hull[i].x, hull[i].y, 0);
-                i++;
-            }
 
-            int c = 0;
-            foreach (var item in holes[0])
+            // Create the Vector3 vertices
+
+             // Vector3[] vertices = new Vector3[hull.Length];
+             // int i = 0;
+             // foreach (var item in hull)
+             // {
+             //     vertices[i] = new Vector3(hull[i].x, hull[i].y, 0);
+             //     i++;
+             // }
+
+             //Create the Vector3 vertices
+              Vector3[] vertices = new Vector3[hull.Length + holes[0].Length];
+              int i = 0;
+              foreach (var item in hull)
+              {
+                  vertices[i] = new Vector3(hull[i].x, hull[i].y, 0);
+                  i++;
+              }
            
-            {
-                vertices[i] = new Vector3(holes[0][c].x, holes[0][c].y, 0);
-                i++;
-                c++;
-            }
+             int c = 0;
+             foreach (var item in holes[0])
+            
+             {
+                 vertices[i] = new Vector3(holes[0][c].x, holes[0][c].y, 0);
+                 i++;
+                 c++;
+             }
 
 
             Mymesh.vertices = vertices;
