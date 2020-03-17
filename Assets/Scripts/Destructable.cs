@@ -7,7 +7,6 @@ namespace Destructable
     using ClipperLib;
     using Path = List<ClipperLib.IntPoint>;
     using Paths = List<List<ClipperLib.IntPoint>>;
-    using Polygon = EarTriangulator.Polygon;
 
 
     public class Destructable : MonoBehaviour
@@ -176,16 +175,7 @@ namespace Destructable
 
             foreach (var vector2s in verticesarr)
             {
-                Polygon polygon = new Polygon(vector2s);
-
-                EarTriangulator earTriangulator = new EarTriangulator(polygon);
-                foreach (var item in earTriangulator.Triangulate())
-                {
-                    //change k*4
-                    indices.Add(item +(k*4));
-                   
-                }
-                k++;
+               
             }
 
 
