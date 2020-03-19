@@ -7,20 +7,20 @@ namespace Destructable
     public class Hole : MonoBehaviour
     {
 
-        float a = 0;
-        float b = 0;
+        float a = 1;
+        float b = 1;
         // Start is called before the first frame update
         void Start()
         {
-                //MakeWall();
+                //MakeWall(a,b);
 
           //  Extrude();
         }
 
         private void Update()
         {
-            a = Mathf.Sin(Time.time);
-            b = Mathf.Sin(Time.time);
+            a = Mathf.Sin(Time.time)*2;
+            b = Mathf.Sin(Time.time)*2;
             MakeWall(a,b);
         }
 
@@ -39,35 +39,36 @@ namespace Destructable
 
         }
 
+        // This is experimental please for love of god fix this this is too bad even for me...
         void MakeHoles(Dictionary<int, int> connections, int link, List<List<Vector2>> Holes, List<Vector2> Shape)
         {
             int hook = -1;
             //just for finding hook
             if (!connections.TryGetValue(link, out hook))
             {
-                Debug.Log("Didnot find the link on dictionary!");
+                Debug.Log("Didnot find the link on dictionary!:" +link);
             }
             else
             {
                 //hook %= 4;
              
                 Shape.Add(Holes[(hook / 4) - 1][hook % 4]);
-                for (int t = hook+1; t < hook + Holes[(hook / 4) - 1].Count; t++)
+                for (int t = hook+1; t < hook + Holes[(hook / 4) - 1].Count; t++)//11,12,13
                 {
-                    
-                    if (!connections.ContainsKey(t))
+                        Debug.Log("t:" + t);
+                    if (!connections.ContainsKey((hook/4)*4+(t%4)))
                     {
-                       
                         Shape.Add(Holes[(hook / 4) - 1][t % 4]);
                     }
                     else
                     {
                         //dont use 4  use holesvert.count
-                        Shape.Add(Holes[(t / 4)-1][t % 4]);
+                        Shape.Add(Holes[(hook / 4)-1][t % 4]);
                         //Queue Holes with recursive function
                       
-                        MakeHoles(connections,t, Holes, Shape);
-                        Shape.Add(Holes[(t / 4) - 1][t % 4]);
+                        MakeHoles(connections, (hook / 4) * 4 + (t % 4), Holes, Shape);
+
+                        Shape.Add(Holes[(hook / 4) - 1][t % 4]);
                     }
 
                 }
@@ -96,13 +97,11 @@ namespace Destructable
             hull.Add(new Vector2(10, 0));
 
 
-            int x = 7;
-            int y = 7;
             List<Vector2> Hole1 = new List<Vector2>();
-            Hole1.Add(new Vector2(a + 1, b + 1));
-            Hole1.Add(new Vector2(a + 2, b + 1));
-            Hole1.Add(new Vector2(a + 2, b + 2));
-            Hole1.Add(new Vector2(a + 1, b + 2));
+            Hole1.Add(new Vector2(1,8));
+            Hole1.Add(new Vector2(2,8));
+            Hole1.Add(new Vector2(2,9));
+            Hole1.Add(new Vector2(1,9));
             Holes.Add(Hole1);
 
             List<Vector2> Hole2 = new List<Vector2>();
@@ -110,7 +109,7 @@ namespace Destructable
             Hole2.Add(new Vector2(a + 4, b + 3));
             Hole2.Add(new Vector2(a + 4, b + 4));
             Hole2.Add(new Vector2(a + 3, b + 4));
-            //Holes.Add(Hole2);
+            Holes.Add(Hole2);
 
 
             List<Vector2> Hole3 = new List<Vector2>();
@@ -118,14 +117,15 @@ namespace Destructable
             Hole3.Add(new Vector2(a + 6, b + 5));
             Hole3.Add(new Vector2(a + 6, b + 6));
             Hole3.Add(new Vector2(a + 5, b + 6));
-            //Holes.Add(Hole3);
+            Holes.Add(Hole3);
 
             List<Vector2> Hole4 = new List<Vector2>();
-            Hole4.Add(new Vector2(a + 7, b + 7));
-            Hole4.Add(new Vector2(a + 8, b + 7));
-            Hole4.Add(new Vector2(a + 8, b + 8));
-            Hole4.Add(new Vector2(a + 7, b + 8));
+            Hole4.Add(new Vector2(8,1));
+            Hole4.Add(new Vector2(9,1));
+            Hole4.Add(new Vector2(9,2));
+            Hole4.Add(new Vector2(8,2));
             Holes.Add(Hole4);
+
             //hull.Add(new Vector2(1, 1));
             //hull.Add(new Vector2(2, 1));
             //hull.Add(new Vector2(2, 2));
@@ -167,10 +167,7 @@ namespace Destructable
             }
             if(hullconnection!=-1)
             {
-              if(hullconnection < holeconnection)
               connections.Add(hullconnection, holeconnection);
-              else
-              connections.Add(holeconnection, hullconnection);
             }
 
 
@@ -180,7 +177,7 @@ namespace Destructable
             for (int k = 0; k < Holes.Count - 1; k++)
             {
 
-                Debug.Log("k:" + k);
+                //Debug.Log("k:" + k);
                 float mindistance = Mathf.Infinity;
 
                 for (int c = 0; c < Holes[k].Count; c++)
@@ -197,7 +194,7 @@ namespace Destructable
                                 mindistance = distance;
                                 linkconnection = 4 + (k * 4) + c;
                                 hookconnection = 4 + (t * 4) + n;
-                                Debug.Log("dff distance:" + k + "," + t + " :" + distance);
+                               // Debug.Log("dff distance:" + k + "," + t + " :" + distance);
 
 
                             }
@@ -206,11 +203,9 @@ namespace Destructable
                     }
 
                 }
-
-                if (linkconnection < hookconnection)
-                    connections.Add(linkconnection, hookconnection);
-                else
-                    connections.Add(hookconnection, linkconnection);
+                
+                connections.Add(linkconnection, hookconnection);
+                connections.Add(hookconnection, linkconnection);
 
             }
 
@@ -255,6 +250,7 @@ namespace Destructable
             Mymesh.RecalculateNormals();
 
             GetComponent<MeshFilter>().mesh = Mymesh;
+            GetComponent<MeshCollider>().sharedMesh = Mymesh;
 
         }
 
