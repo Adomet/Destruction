@@ -4,31 +4,26 @@ using UnityEngine;
 
 namespace Destructable
 {
-    public class LinkedArray
-    {
-        LinkedList<int[]> linkedArray = new LinkedList<int[]>();
 
-        public void Add(int a , int b)
-        {
-            int[] arr = { a, b };
-            linkedArray.AddLast(arr);
-        }
-    }
-
-
-    public class Hole : MonoBehaviour
+    public class Wall : MonoBehaviour
     {
 
         List<List<Vector2>> Holes = new List<List<Vector2>>();
+        public float extrudedist = 0.1f;
+        public GameObject backface = null;
+
 
         float a = 1;
         float b = 1;
         // Start is called before the first frame update
         void Start()
         {
-              MakeWall(a,b);
+            MakeWall(a, b);
 
-          //  Extrude();
+            backface.transform.position += new Vector3(0, 0, extrudedist);
+
+
+            //  Extrude();
         }
 
         private void Update()
@@ -93,13 +88,15 @@ namespace Destructable
         public void AddHole(Vector2 Pointofimpact)
         {
             List<Vector2> newHole = new List<Vector2>();
-            newHole.Add(Pointofimpact + new Vector2(-0.5f, -0.5f));
-            newHole.Add(Pointofimpact + new Vector2(+0.5f, -0.5f));
-            newHole.Add(Pointofimpact + new Vector2(+0.5f, +0.5f));
-            newHole.Add(Pointofimpact + new Vector2(-0.5f, +0.5f));
+            newHole.Add(Pointofimpact + new Vector2(-0.1f, -0.1f));
+            newHole.Add(Pointofimpact + new Vector2(+0.1f, -0.1f));
+            newHole.Add(Pointofimpact + new Vector2(+0.1f, +0.1f));
+            newHole.Add(Pointofimpact + new Vector2(-0.1f, +0.1f));
             Holes.Add(newHole);
 
             MakeWall(a, b);
+      
+            
         }
         public void MakeWall(float a , float b)
         {
@@ -116,56 +113,11 @@ namespace Destructable
 
             //Add connetion vert again after connection
             hull.Add(new Vector2(0, 0));
-            hull.Add(new Vector2(0, 10));
-            hull.Add(new Vector2(10, 10));
-            hull.Add(new Vector2(10, 0));
+            hull.Add(new Vector2(0, 3));
+            hull.Add(new Vector2(5, 3));
+            hull.Add(new Vector2(5, 0));
 
 
-           // List<Vector2> Hole1 = new List<Vector2>();
-           // Hole1.Add(new Vector2(1,8));
-           // Hole1.Add(new Vector2(2,8));
-           // Hole1.Add(new Vector2(2,9));
-           // Hole1.Add(new Vector2(1,9));
-           // Holes.Add(Hole1);
-           //
-           // List<Vector2> Hole2 = new List<Vector2>();
-           // Hole2.Add(new Vector2(a + 3, b + 3));
-           // Hole2.Add(new Vector2(a + 4, b + 3));
-           // Hole2.Add(new Vector2(a + 4, b + 4));
-           // Hole2.Add(new Vector2(a + 3, b + 4));
-           // Holes.Add(Hole2);
-           //
-           //
-           // List<Vector2> Hole3 = new List<Vector2>();
-           // Hole3.Add(new Vector2(a + 5, b + 5));
-           // Hole3.Add(new Vector2(a + 6, b + 5));
-           // Hole3.Add(new Vector2(a + 6, b + 6));
-           // Hole3.Add(new Vector2(a + 5, b + 6));
-           // Holes.Add(Hole3);
-           //
-           // List<Vector2> Hole4 = new List<Vector2>();
-           // Hole4.Add(new Vector2(8,1));
-           // Hole4.Add(new Vector2(9,1));
-           // Hole4.Add(new Vector2(9,2));
-           // Hole4.Add(new Vector2(8,2));
-           // Holes.Add(Hole4);
-
-            //hull.Add(new Vector2(1, 1));
-            //hull.Add(new Vector2(2, 1));
-            //hull.Add(new Vector2(2, 2));
-            //
-            //hull.Add(new Vector2(8, 8));
-            //hull.Add(new Vector2(9, 8));
-            //hull.Add(new Vector2(9, 9));
-            //hull.Add(new Vector2(8, 9));
-            //hull.Add(new Vector2(8, 8));
-            //
-            //hull.Add(new Vector2(2, 2));
-            //hull.Add(new Vector2(1, 2));
-            //hull.Add(new Vector2(1, 1));
-
-
-            //Doesnt copyes the data
             //Calculate connnetion hull to one of the edges then connect the holes 
             int hullconnection = -1;
             int holeconnection = -1;
@@ -308,6 +260,8 @@ namespace Destructable
             GetComponent<MeshFilter>().mesh = Mymesh;
             GetComponent<MeshCollider>().sharedMesh = Mymesh;
 
+            backface.GetComponent<MeshFilter>().mesh = Mymesh;
+            backface.GetComponent<MeshCollider>().sharedMesh = Mymesh;
         }
 
     }

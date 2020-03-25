@@ -6,7 +6,7 @@ using UnityEngine;
 public class Shooter : MonoBehaviour
 {
     // Start is called before the first frame update
-    public Hole Wall = new Hole();
+    public Wall Wall = new Wall();
 
     void Start()
     {
